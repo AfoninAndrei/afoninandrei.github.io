@@ -1,0 +1,231 @@
+---
+layout: post
+title:  "Unconfusing RL: part 1. MDP"
+date:   2025-01-18 16:43:40 +0100
+categories: Unconfusing RL
+---
+
+In this series of notes, titled **Unconfusing RL**, I aim to summarize what I consider the essential concepts of **Reinforcement Learning (RL)**. This is my personal attempt to deepen my understanding, draw connections between algorithms, and share insights with others. I hope someone will benefit from that as well.
+
+Why This Series? Reinforcement Learning can often feel intimidating and difficult to grasp. While excellent books and courses exist, I’ve found that even after studying the same algorithms and concepts multiple times, things can remain unclear. At least, that has been my experience. Sometimes, to truly understand something, we need to slow down, revisit the basics, and ask more questions. I will try to do that in this series of notes.
+
+> **Disclaimer**: Please note that these are more of filling-the-blank notes and not self-contained articles or lectures on the topic. For instance, I might skip over well-known definitions or properties unless they are critical for understanding the discussion. This will help to keep it concise and avoid creating yet another article on things like (MDP, Q-learning, \*Put your banger\*) explained.
+
+---
+
+### What is this note about?
+
+In this note, I’ll reflect on the **Markov Decision Process (MDP)**—why it’s a core component of RL, the significance of knowing the dynamics of the environment (knowing the MDP), and how this knowledge influences algorithm design.
+
+### Why MDP?
+
+Wherever we have some decision-making process, we need to model it somehow. An MDP is a mathematical framework that helps to model situations where the outcomes of decisions are partly random and partly under the control of a decision-maker. Reinforcement Learning (RL) deals with sequences of such decisions. Even when the outcomes of actions are deterministic, the MDP framework still applies—deterministic outcomes can be represented using a Dirac delta function as the probability density. Our decision-maker (an agent) needs to come up with a plan for every possible state. This plan is a **policy**, and it is usually stochastic when the agent returns a probability distribution over actions.
+
+MDPs assume the environment satisfies the **Markov property**, where the current state contains all the necessary information about the past that could affect the future. Notice that the transition probability matrix fully characterizes the environment's dynamics. This means that if you know this matrix (knowing the set of states, actions and rewards is assumed), you know everything about MDP. Notice that many real-world problems do not possess a Markov property, usually, it is only an approximation. For instance, Recurrent Neural Networks (RNNs) can be used to keep the compression of the history in the hidden variable which helps to bring the problem closer to satisfying Markov property.
+
+Why Is MDP a convenient framework?
+
+1. MDPs are easy enough to derive a theoretical foundation for reinforcement learning problems.
+2. Many problems can be framed as an MDP. For example:
+   - The Atari Pong game with **one frame as a state** is **not an MDP** because the state doesn’t encode the direction of the ball. 
+   - If a state includes **four consecutive frames**, it becomes an MDP because the direction of the ball can be inferred.
+
+
+### Bellman equation
+In RL we try to maximise some scalar value called reward. Some reward $$R$$ is associated with any transition taken inside the MDP of the environment, and $$G$$ is a cumulative reward (usually discounted with a constant $$\gamma$$) over the trajectory. This cumulative reward is a **sample**, what we try to maximise is an **expectation** over these samples. Value function shows the expected cumulative reward one would get starting from a given state and following a given policy:
+
+$$V_{\pi}(s) = \mathbb{E}_{a \sim \pi, s_{t + 1} \sim P} \left[ G_t |S_t = s \right] = \mathbb{E}_{a \sim \pi, s_{t + 1} \sim P} \left[ R_{t+1} + \gamma V_{\pi}(S_{t+1}) |S_t = s \right]$$
+
+The subscript for the value function shows that the expectation we compute depends on the action chosen. If you behave differently you will get a different reward. This equation is called the Bellman Expectation equation. [Here](https://stats.stackexchange.com/questions/243384/deriving-bellmans-equation-in-reinforcement-learning/413974#413974) is proof of why one can write a value function for the next state under the expectation sign. Similarly, for the action-value function with omitted subscripts for the expectation sign (they are the same as above), we get:
+
+$$Q_{\pi}(s, a) = \mathbb{E}\left[ G_t |S_t = s, A_t = a \right] = \mathbb{E}\left[ R_{t+1} + \gamma Q_{\pi}(S_{t+1}, A_{t + 1}) |S_t = s, A_t =a \right]$$
+
+Let’s discuss a more detailed derivation of the Bellman equation by looking at the below diagram. First, given a state, we choose an action with some policy probability distribution. This results in the following equation:
+
+$$V_{\pi}(s) = \sum_a \pi(a|s) Q_{\pi}(s, a)$$
+
+<p align="center">
+  <img src="/assets/images/MDP.jpg" alt="Diagram description" width="1000">
+</p>
+<p align="center"><em>Figure: MDP graph</em></p>
+
+Then given an action and starting state, the environment reacts by transitioning us to the next action with an environment probability distribution and some transition reward. This gives us the following equation:
+
+$$Q_{\pi}(s, a) = \sum_{s'} \mathbb{P} (s' | s, a) \left[ R (s, a, s') + \gamma V_{\pi}(s') \right]$$
+
+Finally, by combining the above equations we get:
+
+$$V_{\pi}(s) = \sum_a \pi(a|s) \sum_{s'} \mathbb{P} (s' | s, a) \left[ R(s, a, s') + \gamma V_{\pi}(s') \right]$$
+
+Similarly, for the Bellman Optimality equation by assuming our policy is greedy meaning that we take action based on the best action-value function we have:
+
+$$V_{*}(s) = \max_aQ_{*}(s,a) = \max_a \sum_{s'} \mathbb{P} (s' | s, a) \left[ R(s, a, s') + \gamma V_{*}(s') \right] $$
+
+> **On Q-function and V-function practical difference**: If you have the optimal V-function, you could use the MDP to do a one-step search for the optimal Q-function and then use this to build the optimal policy. On the other hand, if you had the optimal Q-function, you don’t need the MDP at all. You could use the optimal Q-function to find the optimal V-function by merely taking the maximum over the actions. And you could obtain the optimal policy using the optimal Q-function by taking the argmax over the actions. This means that if the MDP of your environment is now known (usual case) then knowing the V-function does not give you much since you cannot derive the policy from this knowledge. Predicting Q-function (see DQN algorithm) makes more sense.
+
+**Bellman Expectation equation** describes the estimation problem for a given policy by computing its value function, it is a linear equation in terms of the value function. Hence, given an MDP dynamics, one can solve it directly with a closed-form solution (which means we know the transition probabilities and the corresponding rewards). **Bellman Optimality equation** describes the problem of finding the optimal policy, by finding optimal value function. It is a non-linear equation due to max operation and, in general, there is no closed-form solution, but there is a unique solution due to the contraction property of the Bellman operator (explained below). Since there is no closed-form solution there is a need for iterative methods. In the case of the Bellman expectation equation, we can rewrite it in the matrix form, with R standing for the expected reward vector associated with the transition from state:
+
+$$\begin{align*}
+\mathbf{V}_{\pi} &= \mathbf{R}^\pi + \gamma \mathbf{P}^\pi \mathbf{V}_{\pi}, \\
+\mathbf{V}_{\pi} &= (\mathbf{I} - \gamma \mathbf{P}^\pi)^{-1}\mathbf{R}^\pi , \\
+P^\pi_{ij} &= \sum_{a} \pi(a|s_{i}) P(s_{j}|s_{i}, a)
+\end{align*}$$
+
+The matrix is invertible since gamma is less than 1 and matrix $$\mathbf{P}^\pi$$ is stochastic. The solution is unique and we get in $$O(n^3)$$ complexity where $$n$$ is the number of states. This is expensive in the case of a large number of states. Another option is to lean towards iterative methods. As you will see below we can find solutions to both equations by using Dynamic programming (DP).
+
+> **A take on exploration/exploitation**: In real-world examples, the MDP usually is not known. You may not know the probability of outcomes and even the set of outcomes itself. So, in these cases one needs to explore, this will help to estimate what outcomes with what probability could occur. When an agent has full access to an MDP, one can calculate the expectations directly by just looking at the dynamics probabilities and rewards, given that this calculation is feasible (you may know the MDP, but it can be too huge to be practically used in other ways but in a sampled-based manner). In this case, there is no need for exploration! The policy/value iteration methods described below are examples of dynamic programming methods where MDP is assumed to be known. Hence there is no need to interact with the environment and no trial-and-error learning.
+
+### Dynamic programming
+
+### Policy iteration
+Remember solving Dynamic Programming (DP) problems during interviews? Is it somehow different from the DP we mentioned above? Not really, DP are the iterative methods that have a certain structure:
+
+1. They can be decomposed into smaller problems:
+2. Solutions to subproblems can be saved and reused to solve a bigger subproblem.
+
+For example, here is the solution to the leetcode coin change problem using the value iteration algorithm discussed below.
+
+Policy iteration contains two steps: policy evaluation and policy improvement. The first thing you need is to be able to evaluate your algorithm/model/whatever this way you can deduce what moves the needle. It is very important to be able to properly evaluate the decisions you make, after that the optimization process can be a piece of cake. Policy iteration is exactly about that: you have an MDP, and you run some process that evaluates a given policy. Given these evaluation results, you create a greedy policy that replaces your initial policy. The loop repeats until the policy does not change anymore. Here is a scheme of what it looks like. Taken from [here](https://towardsdatascience.com/elucidating-policy-iteration-in-reinforcement-learning-jacks-car-rental-problem-d41b34c8aec7).
+
+<p align="center">
+  <img src="/assets/images/GPI.jpg" alt="Diagram description" width="1000">
+</p>
+<p align="center"><em>Figure: Generalized Policy Iteration.</em></p>
+
+Policy improvement converges when it is greedy with respect to the given value function, and value function evaluation converges when it is consistent with the current policies. Each process messes up the consistency of another process, but both of them eventually converge to the fixed point so in a sense they work towards a common goal as shown in the right plot.
+
+**Iterative policy evaluation:** take the Bellman Expectation equation and convert it to the iterative update. The process of estimating the value function for the given policy is iterative and proven to converge given that the Bellman operator is a contraction.
+
+$$v_{k+1}(s) = \sum_a \pi(a|s) \sum_{s'} \mathbb{P} (s' | s, a) \left[ R(s, a, s') + \gamma v_{k}(s') \right] $$
+
+<div style="border: 2px solid #ddd; padding: 10px; border-radius: 8px; background: #f9f9f9; margin-bottom: 20px; position: relative;">
+  <span style="position: absolute; top: -10px; left: 10px; background: #f9f9f9; padding: 0 10px; font-size: 12px; color: #888; font-weight: bold; border: 1px solid #ddd; border-radius: 4px;">
+    💻 4 Code Lovers
+  </span>
+
+  {% highlight python %}
+  def policy_evaluation(env, policy: np.array, gamma: float) -> np.array:
+      """"Estimation of the value function"""
+      theta = 1e-6
+      prev_Q = np.zeros((env.observation_space.n, env.action_space.n))
+      MDP = env.unwrapped.P
+
+      while True:
+          # Bellman operator is a contraction
+          # Iterate long enough -> Convergence
+          Q = np.zeros((env.observation_space.n, env.action_space.n))
+          for s in range(env.observation_space.n):
+              for a in range(env.action_space.n):
+                  # Compute the Q-value for (state, action) pair
+                  # iterate over all possible outcomes from the (state, action)
+                  # for the next Q iterate over actions
+                  Q[s][a] = sum(
+                      prob * (reward + gamma * (not done) *
+                              sum(policy[next_state][next_action] *
+                                  prev_Q[next_state][next_action]
+                                  for next_action in range(env.action_space.n)))
+                      for prob, next_state, reward, done in MDP[s][a])
+
+          # Check for convergence
+          if np.max(np.abs(prev_Q - Q)) < theta:
+              break
+
+          prev_Q = Q.copy()
+
+      return prev_Q
+  {% endhighlight %}
+</div>
+
+**Policy improvement:** imagine that you have some policy and you are considering changing it, how can you understand if the new policy is better? If in a given state you change an action and then follow your old policy, then you can compare the value function of the state to the action-value function of a new action. Now, if one chooses action greedily in a given state, then it can be shown that at least we are not doing worse for any state:
+
+$$V_{\pi'}(s) \ge Q_{\pi}(s, \pi'(s)) = \max_a Q_{\pi}(s, a) \ge Q_{\pi}(s, \pi(s)) = V_{\pi}(s), \forall s$$
+
+A natural extension is to consider choosing greedy action in all states. Hence, a greedy policy based on the action-value function improves the policy. Now, if there is no improvement anymore then we get the Bellman optimality equation and our policy is optimal:
+
+$$\max_a Q_{\pi}(s, a) = Q_{\pi}(s, \pi(s)) = V_{\pi}(s) => V_{\pi}(s) = V_{*}(s), \forall s$$
+
+This means that we have a method to improve the policy which is proven to converge to the optimal policy. First, we evaluate the action-value function for all states, then we take greedy action for each state, then repeat. One could see that these reminds expectation–maximization algorithms.
+
+<div style="border: 2px solid #ddd; padding: 10px; border-radius: 8px; background: #f9f9f9; margin-bottom: 20px; position: relative;">
+  <span style="position: absolute; top: -10px; left: 10px; background: #f9f9f9; padding: 0 10px; font-size: 12px; color: #888; font-weight: bold; border: 1px solid #ddd; border-radius: 4px;">
+    💻 4 Code Lovers
+  </span>
+
+  {% highlight python %}
+  def greedify(Q):
+      """Greedify policy: policy improvement"""
+      new_pi = np.zeros_like(Q)
+      new_pi[np.arange(Q.shape[0]), np.argmax(Q, axis=1)] = 1
+      return new_pi
+
+
+  def policy_iteration(env, policy, gamma=0.9, theta=1e-6):
+      """Policy iteration"""
+      while True:
+          old_policy = policy.copy()
+          Q = policy_evaluation(env, policy, gamma)
+          policy = greedify(Q)
+          if np.max(np.abs(old_policy - policy)) < theta:
+              break
+
+      return policy, Q
+  {% endhighlight %}
+</div>
+
+
+
+<div style="border: 2px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; margin-bottom: 20px; position: relative;">
+  <span style="position: absolute; top: -10px; left: 10px; background: #f9f9f9; padding: 0 10px; font-size: 12px; color: #888; font-weight: bold; border: 1px solid #ddd; border-radius: 4px;">
+    🧠 Something to think about
+  </span>
+  <ul style="margin: 0; padding-left: 20px; color: #333; font-style: italic;">
+    <li>Is policy iteration applicable to non-tabular settings?</li>
+    <li>Does SARSA have anything to do with the policy iteration?</li>
+  </ul>
+</div>
+
+
+
+#### Value iteration
+
+Take the Bellman Optimality equation and convert it to the iterative update. It is a one-step lookahead algorithm based on the idea that we already know $$v^*$$ for the next step:
+
+$$ v_{k+1}(s) = \max_a  \sum_{s'} \mathbb{P} (s' | s, a) \left[ R(s, a, s') + \gamma v_{k}(s') \right] $$
+
+*All the intermediate iterations of the value iteration algorithm may not even correspond to any real policy here in comparison to the policy iteration algorithm where we estimate the value function for a given intermediate policy.*
+
+[Example](https://github.com/AfoninAndrei/RL-Playground/blob/main/coin_change.py) of applying value iteration to the leetcode problem 'Coin Change'.
+
+<div style="border: 2px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; margin-bottom: 20px; position: relative;">
+  <span style="position: absolute; top: -10px; left: 10px; background: #f9f9f9; padding: 0 10px; font-size: 12px; color: #888; font-weight: bold; border: 1px solid #ddd; border-radius: 4px;">
+    🧠 Something to think about
+  </span>
+  <ul style="margin: 0; padding-left: 20px; color: #333; font-style: italic;">
+    <li>Does Q-Learning have anything to do with the value iteration?</li>
+  </ul>
+</div>
+
+### Why does Policy / Value iteration converge?
+
+The **Bellman expectation operator** is defined as:
+
+$$\mathbf{T}^\pi (\mathbf{V}) = \mathbf{R}^\pi + \gamma \mathbf{P}^\pi \mathbf{V}$$
+
+
+The **Bellman optimality operator** is defined as:
+
+$$\mathbf{T}^* (\mathbf{V}) = \max_a [\mathbf{R}^a + \gamma \mathbf{P}^a \mathbf{V}]$$
+
+Both operators are contractions, they have a unique fixed point. For the Bellman expectation operator, the fixed point is the true value function of the policy $$ V^\pi $$ ([proof](https://ai.stackexchange.com/questions/25368/how-to-derive-matrix-form-of-the-bellman-operators)) while for the Bellman optimality operator, it is the optimal value function $$V^* $$. Hence both policy evaluation and value iteration converge to their corresponding fixed points. Hence by iteratively applying these operators, we can converge to the true values for each state.
+
+### Wrapping up
+
+Policy evaluation is an application of the Bellman Expectation equation - it helps estimate a given policy's value function. Value iteration is an application of the Bellman optimality equation - it helps to find the optimal value function.
+
+
+### Used Resources
+- [UCL Course](https://www.davidsilver.uk/teaching/) by David Silver
+- [Reinforcement Learning: An Introduction](http://incompleteideas.net/book/the-book-2nd.html) by Richard S. Sutton and Andrew G. Barto  
+- [Grokking Deep Reinforcement Learning](https://www.manning.com/books/grokking-deep-reinforcement-learning) by Miguel Morales
+- [Coding example](https://github.com/AfoninAndrei/RL-Playground/blob/main/policy_iteration.py) using value iteration and policy iteration to solve the FrozenLake-v1 environment.
+
