@@ -167,6 +167,8 @@ DEPENDENCIES
   base64
   bundler
   csv
+  jekyll-feed
+  jekyll-seo-tag
   logger
   minima!
 

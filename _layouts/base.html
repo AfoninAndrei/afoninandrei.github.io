@@ -7,6 +7,20 @@
 
   {%- include header.html -%}
 
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const namespace = "afoninandrei.github.io";  // ← set your CountAPI namespace
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.getAttribute('data-key') || "home";
+        fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
+          .then(r => r.json())
+          .then(data => { el.textContent = data.value })
+          .catch(console.error);
+      });
+    });
+  </script>
+
+
   <main class="page-content" aria-label="Content">
     <div class="wrapper">
       {{ content }}
@@ -15,12 +29,11 @@
 
   {%- include footer.html -%}
 
-</body>
 
-<script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
-  </script>
-<script type="text/x-mathjax-config">
+  <script type="text/javascript" async
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+  <script type="text/x-mathjax-config">
   MathJax.Hub.Config({
     tex2jax: {
       inlineMath: [["\\(", "\\)"]],
@@ -29,5 +42,8 @@
     }
   });
 </script>
+
+
+</body>
 
 </html>
