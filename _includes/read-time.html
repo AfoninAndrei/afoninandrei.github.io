@@ -1,0 +1,7 @@
+{% capture text %}{{ content | strip_html }}{% endcapture %}
+{% assign wc = text | number_of_words %}
+{% assign mins = wc | divided_by:200 %}
+{% if wc | modulo:200 > 0 %}
+{% assign mins = mins | plus:1 %}
+{% endif %}
+<span class="read-time">⏱ {{ mins }} min read</span>
