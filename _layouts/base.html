@@ -8,17 +8,21 @@
   {%- include header.html -%}
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const namespace = "afoninandrei.github.io";  // ← your CountAPI namespace
+    document.addEventListener('DOMContentLoaded', () => {
+      const namespace = 'afoninandrei.github.io';
       document.querySelectorAll('[data-key]').forEach(el => {
-        const key = el.getAttribute('data-key') || "home";
-        fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
+        const key = el.getAttribute('data-key') || 'home';
+        fetch(`https://countapi.mileshilliard.com/api/v1/hit/${namespace}-${key}`)
           .then(r => r.json())
-          .then(data => { el.textContent = data.value })
-          .catch(console.error);
+          .then(({ value }) => { el.textContent = value; })
+          .catch(err => {
+            console.error('View-counter error:', err);
+            el.textContent = '⭘';     // graceful fallback
+          });
       });
     });
   </script>
+
 
 
   <main class="page-content" aria-label="Content">
