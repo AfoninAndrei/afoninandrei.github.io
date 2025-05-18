@@ -9,7 +9,7 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const namespace = "afoninandrei.github.io";  // ← set your CountAPI namespace
+      const namespace = "afoninandrei.github.io";  // ← your CountAPI namespace
       document.querySelectorAll('[data-key]').forEach(el => {
         const key = el.getAttribute('data-key') || "home";
         fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
