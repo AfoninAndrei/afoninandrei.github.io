@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Notes on AlphaZero"
-date:   2025-01-26 14:43:40 +0100
+date:   2025-02-21 14:43:40 +0100
 categories: General
 ---
 
@@ -35,7 +35,7 @@ Finally, there's one crucial question remaining: how exactly do we handle explor
 > 1. **You need to have a model of the environment.**  
 >    You either have it like in board games or you learn it (checkout [MuZero](https://arxiv.org/abs/1911.08265)) - the last is a challenging step on its own.  
 > 2. **The environment should near-deterministic.**  
->    Stochastic dynamics explode the tree and simulation becomes infeasible to get any low-variance signal.
+>    Stochastic dynamics explode the tree and simulation becomes infeasible to get any low-variance signal. Check out interesting work on [Sampled MuZero](https://proceedings.mlr.press/v139/hubert21a/hubert21a.pdf#page=0.38) for huge action spaces and determenistic environments.
 
 
 ## AlphaZero: Algorithm
@@ -387,7 +387,7 @@ $$
 PUCT(s, a) = V_{\theta}(s, a) + c \cdot P_{\theta}(s, a) \cdot \frac{\sqrt{N(s)}}{1 + N(s, a)}
 $$
 
-This neural-guided search significantly improves efficiency by biasing simulations toward promising moves. However, the inclusion of a learned prior means that PUCT does not strictly inherit UCT’s convergence guarantee. By using a neural network, we introduce bias into the search process. Consequently, a poorly trained or misguided prior could negatively influence exploration. For instance, if the network erroneously assigns a near-zero prior probability to the genuinely optimal move, the PUCT exploration term might neglect that move entirely, effectively ignoring potentially optimal moves. To counteract this potential failure mode, AlphaZero mitigates the issue by adding small Dirichlet noise to the prior at the root of each self-play game. This ad-hoc exploration ensures occasional exploration of every legal move, preventing complete neglect of any potentially good action.
+This neural-guided search significantly improves efficiency by biasing simulations toward promising moves. However, the inclusion of a learned prior means that PUCT does not strictly inherit UCT’s convergence guarantee. By using a neural network, we introduce bias into the search process. Policy: Suggests likely promising moves (reducing branching factor). Value: Provides quick, approximate assessments of positions (reducing depth needed). Consequently, a poorly trained or misguided prior could negatively influence exploration. For instance, if the network erroneously assigns a near-zero prior probability to the genuinely optimal move, the PUCT exploration term might neglect that move entirely, effectively ignoring potentially optimal moves. To counteract this potential failure mode, AlphaZero mitigates the issue by adding small Dirichlet noise to the prior at the root of each self-play game. This ad-hoc exploration ensures occasional exploration of every legal move, preventing complete neglect of any potentially good action.
 
 > Essentially, to maintain theoretical convergence guarantees, one must use the UCT formula for exploration in MCTS. This would imply performing many unbiased rollouts until the end of the game to estimate leaf values combined with a uniform prior for selecting moves within the tree search.
 
