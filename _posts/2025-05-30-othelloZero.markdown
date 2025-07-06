@@ -10,9 +10,7 @@ categories: General
 </p>
 <p align="center"><em></em></p>
 
-This project took longer than expected—but finally, here’s a quick walkthrough of how to built OthelloZero agent.
-
-TODO: add link to the code
+This project took longer than expected—but finally, here’s a quick walkthrough of how to built OthelloZero agent. The code is available [here](https://github.com/AfoninAndrei/alphaZero-Othello).
 
 ## Intro
 
@@ -315,4 +313,4 @@ With limited exploration, trajectory variance is low, and training losses may lo
 
 ---
 
-P.S. You can try playing against the models through a simple UI available here.
+P.S. You can try playing against the models through a simple UI available [here](https://github.com/AfoninAndrei/alphaZero-Othello).
